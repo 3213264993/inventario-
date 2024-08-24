@@ -1,5 +1,4 @@
 <?php
-// inventario de ambientes 
 // Conexión a la base de datos
 $conexion = new mysqli("localhost", "root", "", "ambicontrol");
 
@@ -8,47 +7,75 @@ if ($conexion->connect_error) {
     die("Conexión fallida: " . $conexion->connect_error);
 }
 
+// Inicializar el mensaje
+$mensaje = "";
+
 // Verificar si el formulario fue enviado
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // Capturar los datos del formulario
-    $fecha = $_POST['fecha'] ?? '';
-    $hora = $_POST['hora'] ?? '';
+    // Obtener la fecha y hora actual
+    $fecha = date('Y-m-d');
+    $hora = date('H:i:s');
 
-    // Guardar cada elemento en la base de datos
-    $elementos = [
-        'monitores' => 'Monitores',
-        'torres' => 'Torres',
-        'teclados' => 'Teclados',
-        'mouses' => 'Mouses',
-        'sillas' => 'Sillas',
-        'mesas' => 'Mesas',
-        'tablero' => 'Tablero',
-        'aireAcondicionado' => 'Aire Acondicionado',
-        'televisor' => 'Televisor',
-        'proyector' => 'Proyector',
-        'modeloDeInternet' => 'Modelo De Internet',
-        'cortinas' => 'Cortinas',
-        'conectoresElectricos' => 'Conectores Eléctricos',
-        'extension' => 'Extensión',
-        'marcadores' => 'Marcadores',
-        'borradorDeTablero' => 'Borrador De Tablero',
-        'muebles' => 'Muebles'
-    ];
+    // Capturar el número de documento
+    $Numero_Documento = $conexion->real_escape_string($_POST['documento'] ?? '');
 
-    foreach ($elementos as $key => $elemento) {
-        $disponibilidad = $conexion->real_escape_string($_POST[$key . 'Disponibilidad'] ?? '');
-        $cantidad = $conexion->real_escape_string($_POST[$key . 'Cantidad'] ?? 0);
-        $descripcion = $conexion->real_escape_string($_POST[$key . 'Descripcion'] ?? '');
+    // Validar que el campo Número de Documento no esté vacío
+    if (!empty($Numero_Documento)) {
+        $datosGuardados = false; // Variable para verificar si al menos un dato ha sido guardado
 
-        // Insertar datos en la base de datos
-        $sql = "INSERT INTO inventario (elemento, disponibilidad, cantidad, descripcion, fecha, hora) 
-                VALUES ('$elemento', '$disponibilidad', '$cantidad', '$descripcion', '$fecha', '$hora')";
+        // Guardar cada elemento en la base de datos
+        $elementos = [
+            'monitores' => 'Monitores',
+            'torres' => 'Torres',
+            'teclados' => 'Teclados',
+            'mouses' => 'Mouses',
+            'sillas' => 'Sillas',
+            'mesas' => 'Mesas',
+            'tablero' => 'Tablero',
+            'aireAcondicionado' => 'Aire Acondicionado',
+            'televisor' => 'Televisor',
+            'proyector' => 'Proyector',
+            'modeloDeInternet' => 'Modelo De Internet',
+            'cortinas' => 'Cortinas',
+            'conectoresElectricos' => 'Conectores Eléctricos',
+            'extension' => 'Extensión',
+            'marcadores' => 'Marcadores',
+            'borradorDeTablero' => 'Borrador De Tablero',
+            'muebles' => 'Muebles'
+        ];
 
-        if ($conexion->query($sql) === TRUE) {
-            echo "Registro de $elemento guardado con éxito.<br>";
-        } else {
-            echo "Error: " . $sql . "<br>" . $conexion->error;
+        // Preparar la consulta
+        $stmt = $conexion->prepare("INSERT INTO inventario (Numero_Documento, elemento, disponibilidad, cantidad, descripcion, fecha, hora) 
+                                    VALUES (?, ?, ?, ?, ?, ?, ?)");
+
+        $registroHecho = false; // Variable para verificar si se ha hecho al menos un registro
+
+        foreach ($elementos as $key => $elemento) {
+            $disponibilidad = $conexion->real_escape_string($_POST[$key . 'Disponibilidad'] ?? '');
+            $cantidad = $conexion->real_escape_string($_POST[$key . 'Cantidad'] ?? 0);
+            $descripcion = $conexion->real_escape_string($_POST[$key . 'Descripcion'] ?? '');
+
+            // Validar que la cantidad sea un número entero y mayor o igual a 0
+            $cantidad = is_numeric($cantidad) ? intval($cantidad) : 0;
+
+            if (!empty($disponibilidad) || $cantidad > 0 || !empty($descripcion)) {
+                // Bind de parámetros y ejecución
+                $stmt->bind_param("sssssss", $Numero_Documento, $elemento, $disponibilidad, $cantidad, $descripcion, $fecha, $hora);
+                
+                if ($stmt->execute()) {
+                    $registroHecho = true; // Marcar que al menos un registro se hizo
+                }
+            }
         }
+        $stmt->close();
+
+        if ($registroHecho) {
+            $mensaje = "Datos guardados exitosamente.";
+        } else {
+            $mensaje = "No se guardaron datos. Asegúrese de que al menos un campo tenga información.";
+        }
+    } else {
+        $mensaje = "Por favor, ingrese un Número de Documento válido.";
     }
 }
 
@@ -63,17 +90,61 @@ $conexion->close();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inventario de Ambiente</title>
     <link rel="stylesheet" href="../CSS/inver.css">
-   
+    <style>
+        body {
+            background-image: url("../img/SENA4.jpg");
+        }
+        
+        .form-buttons {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+        }
+
+        .button {
+            padding: 10px 50px;
+            border: none;
+            border-radius: 5px;
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .start-btn {
+            background-color: green;
+        }
+
+        .save-btn {
+            background-color: black;
+            color: #fff;
+        }
+
+        .historial-btn {
+            background-color: green;
+        }
+
+        .form-table th, .form-table td {
+            border: -41px solid black; 
+        }
+    </style>
 </head>
 <body>
     <div class="container">
         <img src="../img/logosena.png" alt="Logo SENA" class="logo">
         <h1 class="title">Inventario De Ambiente</h1>
 
-        <form id="inventoryForm" method="POST" action="">
-            <input type="hidden" id="fecha" name="fecha">
-            <input type="hidden" id="hora" name="hora">
+        <?php if (isset($mensaje) && !empty($mensaje)): ?>
+            <div class="alert">
+                <?= htmlspecialchars($mensaje) ?>
+            </div>
+        <?php endif; ?>
 
+        <form id="inventoryForm" method="POST" action="">
+            <div class="form-group">
+                <label for="documento">Numero_Documento:</label>
+                <input type="text" id="documento" name="documento">
+            </div>
             <table class="form-table">
                 <thead>
                     <tr>
@@ -84,15 +155,6 @@ $conexion->close();
                     </tr>
                 </thead>
                 <tbody>
-                    <tr data-element="Monitores">
-                        <td>Monitores</td>
-                        <td class="options">
-                            <label><input type="radio" name="monitoresDisponibilidad" value="sí"> Sí</label>
-                            <label><input type="radio" name="monitoresDisponibilidad" value="no"> No</label>
-                        </td>
-                        <td><input type="number" name="monitoresCantidad" min="0"></td>
-                        <td><input type="text" name="monitoresDescripcion"></td>
-                    </tr>
                     <tr>
                         <td>Monitores</td>
                         <td class="options">
@@ -245,62 +307,15 @@ $conexion->close();
                         </td>
                         <td><input type="number" name="mueblesCantidad" min="0"></td>
                         <td><input type="text" name="mueblesDescripcion"></td>
-                    </tr>
                 </tbody>
             </table>
-            <div class="form-group">
-                <button type="submit" class="submit-button">Enviar</button>
-                <button type="button" class="history-button" onclick="verHistorial()">Historial</button>
+            <div class="form-buttons">
+                <a href="login.php" class="button start-btn">Inicio</a>
+                <button class="button save-btn" type="submit">Guardar</button>
+                <a href="historialinver.php" class="button historial-btn">Historial</a>
             </div>
         </form>
     </div>
-
-    <script>
-        function updateDateTime() {
-            const now = new Date();
-            const fecha = now.toISOString().split('')[0];
-            const hora = now.toTimeString().split(' ')[0];
-
-            document.getElementById('fecha').value = fecha;
-            document.getElementById('hora').value = hora;
-        }
-
-        document.getElementById('inventoryForm').addEventListener('submit', function(event) {
-            event.preventDefault();
-            updateDateTime(); // Actualizar la fecha y la hora antes de enviar el formulario
-
-            const formData = new FormData(this);
-            const entries = Array.from(formData.entries());
-
-            // Obtener los datos de cada fila de la tabla
-            const rows = document.querySelectorAll('tbody tr');
-            rows.forEach(row => {
-                const elementName = row.getAttribute('data-element');
-                const disponibilidad = row.querySelector(`input[name="${elementName.toLowerCase().replace(/\s+/g, '')}Disponibilidad"]:checked`)?.value || '';
-                const cantidad = row.querySelector(`input[name="${elementName.toLowerCase().replace(/\s+/g, '')}Cantidad"]`).value || '';
-                const descripcion = row.querySelector(`input[name="${elementName.toLowerCase().replace(/\s+/g, '')}Descripcion"]`).value || '';
-
-                // Agregar los datos del elemento al historial
-                let historial = JSON.parse(localStorage.getItem('historial')) || [];
-                historial.push({
-                    elemento: elementName,
-                    disponibilidad: disponibilidad,
-                    cantidad: cantidad,
-                    descripcion: descripcion,
-                    fecha: formData.get('fecha'),
-                    hora: formData.get('hora')
-                });
-                localStorage.setItem('historial', JSON.stringify(historial));
-            });
-
-            // Enviar los datos del formulario al servidor
-            this.submit();
-        });
-
-        function verHistorial() {
-            // Redirigir a la página de historial
-            window.location.href = 'inverhistorial.html';
-        }
-    </script>
 </body>
 </html>
+

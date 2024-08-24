@@ -1,5 +1,4 @@
 <?php
-// este para la actulizacion de contraseña
 $servidor = "localhost";
 $usuario = "root";
 $clave = "";

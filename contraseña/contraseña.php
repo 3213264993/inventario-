@@ -1,5 +1,4 @@
 <?php
-// esta es conexion para pedir el correo 
 $servidor = "localhost";
 $usuario = "root";
 $clave = "";
@@ -17,9 +16,9 @@ $error = "";
 
 // Verificar si el formulario ha sido enviado
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // Verificar si el campo 'Email' está definido y no está vacío
-    if (isset($_POST['Email']) && !empty($_POST['Email'])) {
-        $Email = $_POST['Email'];
+    // Verificar si el campo 'email' está definido y no está vacío
+    if (isset($_POST['email']) && !empty($_POST['email'])) {
+        $Email = $_POST['email'];  // Cambié 'Email' a 'email'
 
         // Verificar si el correo electrónico está registrado en la tabla usuarios
         $query = "SELECT * FROM usuarios WHERE Email = ?";
@@ -45,7 +44,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $message = "Para restablecer su contraseña, haga clic en el siguiente enlace: $resetLink";
                 $headers = "From: no-reply@example.com";
 
-                if (mail($email, $subject, $message, $headers)) {
+                // Corregido: usar $Email en lugar de $email
+                if (mail($Email, $subject, $message, $headers)) {
                     echo "<div class='alert alert-success' role='alert'>Se ha enviado un enlace de restablecimiento de contraseña a su correo electrónico.</div>";
                 } else {
                     echo "<div class='alert alert-danger' role='alert'>Error al enviar el correo electrónico.</div>";
