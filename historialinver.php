@@ -25,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET' && (isset($_GET['fecha']) || isset($_GET
     $types = '';
     
     if (!empty($fecha)) {
-        $query .= " AND fecha = ?";
+        $query .= " AND DATE(fecha_hora) = ?";
         $params[] = $fecha;
         $types .= 's';
     }
@@ -35,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET' && (isset($_GET['fecha']) || isset($_GET
         $types .= 's';
     }
     
-    $query .= " ORDER BY fecha ASC"; // Ordenar por fecha
+    $query .= " ORDER BY fecha_hora ASC"; // Ordenar por fecha y hora
     
     $stmt = mysqli_prepare($conexion, $query);
     
@@ -58,7 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET' && (isset($_GET['fecha']) || isset($_GET
     }
 } else {
     // Consulta por defecto si no se ha realizado ninguna búsqueda
-    $query = "SELECT * FROM inventario ORDER BY fecha ASC"; // Ordenar por fecha
+    $query = "SELECT * FROM inventario ORDER BY fecha_hora ASC"; // Ordenar por fecha y hora
     $resultadoInventario = mysqli_query($conexion, $query);
     
     if ($resultadoInventario) {
@@ -71,6 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET' && (isset($_GET['fecha']) || isset($_GET
 // Cerrar la conexión
 mysqli_close($conexion);
 ?>
+
 
 <!DOCTYPE html>
 <html lang="es">
@@ -107,6 +108,7 @@ mysqli_close($conexion);
             <thead>
                 <tr>
                     <th>Fecha</th>
+                    <th>Hora</th>
                     <th>Numero_Documento</th>
                     <th>Elemento</th>
                     <th>Disponibilidad</th>
@@ -118,10 +120,12 @@ mysqli_close($conexion);
             <?php 
             if (isset($elementos)) {
                 foreach ($elementos as $elemento): 
-                    $fecha = isset($elemento['fecha']) ? date('d-m-Y', strtotime($elemento['fecha'])) : 'Sin Fecha';
+                    $fecha = isset($elemento['fecha_hora']) ? date('d-m-Y', strtotime($elemento['fecha_hora'])) : 'Sin Fecha';
+                    $hora = isset($elemento['fecha_hora']) ? date('H:i:s', strtotime($elemento['fecha_hora'])) : 'Sin Hora';
             ?>
                 <tr>
                     <td><?php echo htmlspecialchars($fecha); ?></td>
+                    <td><?php echo htmlspecialchars($hora); ?></td>
                     <td><?php echo htmlspecialchars($elemento['Numero_Documento']); ?></td>
                     <td><?php echo htmlspecialchars($elemento['Elemento']); ?></td>
                     <td><?php echo htmlspecialchars($elemento['Disponibilidad']); ?></td>
@@ -154,20 +158,22 @@ mysqli_close($conexion);
         formElements.forEach((row) => {
             const tds = row.querySelectorAll("td");
             const fecha = tds[0].textContent;
-            const numeroDocumento = tds[1].textContent;
-            const elemento = tds[2].textContent;
-            const disponibilidad = tds[3].textContent;
-            const cantidad = tds[4].textContent;
-            const descripcion = tds[5].textContent;
+            const hora = tds[1].textContent;
+            const numeroDocumento = tds[2].textContent;
+            const elemento = tds[3].textContent;
+            const disponibilidad = tds[4].textContent;
+            const cantidad = tds[5].textContent;
+            const descripcion = tds[6].textContent;
 
             doc.text(`Fecha: ${fecha}`, 20, y);
-            doc.text(`Numero_Documento: ${numeroDocumento}`, 20, y + 10);
-            doc.text(`Elemento: ${elemento}`, 20, y + 20);
-            doc.text(`Disponibilidad: ${disponibilidad}`, 20, y + 30);
-            doc.text(`Cantidad: ${cantidad}`, 20, y + 40);
-            doc.text(`Descripción: ${descripcion}`, 20, y + 50);
+            doc.text(`Hora: ${hora}`, 20, y + 10);
+            doc.text(`Numero_Documento: ${numeroDocumento}`, 20, y + 20);
+            doc.text(`Elemento: ${elemento}`, 20, y + 30);
+            doc.text(`Disponibilidad: ${disponibilidad}`, 20, y + 40);
+            doc.text(`Cantidad: ${cantidad}`, 20, y + 50);
+            doc.text(`Descripción: ${descripcion}`, 20, y + 60);
 
-            y += 60; // Incrementar la posición en Y para la próxima entrada
+            y += 70; // Incrementar la posición en Y para la próxima entrada
 
             // Verificar si se necesita agregar una nueva página
             if (y > 250) {
