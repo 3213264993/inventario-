@@ -1,4 +1,5 @@
 <?php
+// profe es en esta parte donde el codigo no me muestra la fecha ni la hora en la base de datos si la muestra bien.
 // Conexión a la base de datos
 $servidor = "localhost";
 $usuario = "root";
